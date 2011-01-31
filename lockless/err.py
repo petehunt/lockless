@@ -1,5 +1,5 @@
 class RetryTransaction(Exception):
-    pass
+    """ There was some sort of conflict """
 
 class NoTransactionError(Exception):
-    pass
+    """ You did a transactional operation outside of a transaction """
