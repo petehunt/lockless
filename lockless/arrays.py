@@ -33,7 +33,7 @@ class STMArrayInstance(object):
 
     def _check(self):
         if self.stm_array.version.value > self.txn.read_version:
-            raise err.RetryTransaction
+            raise err.ConflictError
 
     def __setitem__(self, *args, **kwargs):
         self.dirty = True

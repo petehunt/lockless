@@ -28,7 +28,7 @@ class STMValueInstance(object):
 
     def _check(self):
         if self.stm_value.version.value > self.txn.read_version:
-            raise err.RetryTransaction
+            raise err.ConflictError
 
     def _get_value(self):
         self._check()
