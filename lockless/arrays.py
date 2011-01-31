@@ -4,6 +4,7 @@ import version_clock
 import err
 
 class STMArray(object):
+    """ I am the transactional equivalent of a multiprocessing.Array. """
     def __init__(self, *args, **kwargs):
         self._array = multiprocessing.Array(*args, **kwargs)
         self.stm_lock = multiprocessing.RLock()

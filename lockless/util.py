@@ -8,6 +8,10 @@ import constants
 
 @contextlib.contextmanager
 def atomic():
+    """
+    Execute a block of code atomically. If the transaction cannot complete,
+    err.RetryTransaction is raised.
+    """
     try:
         yield core.Transaction.start()
         core.Transaction.current().commit()
@@ -20,6 +24,7 @@ def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
                no_delay_tries=constants.DEFAULT_NO_DELAY_TRIES,
                max_tries=constants.DEFAULT_MAX_TRIES,
                ):
+    """ Decorator to automatically retry transactions with exponential backoff """
     def _d(f):
         def _f(*args, **kwargs):
             sleep_time = initial_sleep_time
@@ -42,6 +47,10 @@ def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
     return _d
 
 def transact(*args, **kwargs):
+    """
+    Decorator to mark a function as transactional. You can use this instead of
+    with blocks and auto_retry.
+    """
     def _d(f):
         @auto_retry(*args, **kwargs)
         def _f(*args, **kwargs):
@@ -51,4 +60,5 @@ def transact(*args, **kwargs):
     return _d
 
 def retry():
+    """ Force the transaction to abort """
     raise err.RetryTransaction()

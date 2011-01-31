@@ -4,7 +4,7 @@ import version_clock
 import err
 
 class STMValue(object):
-    """ hidden """
+    """ I am the transactional equivalent of a multiprocessing.Value. """
     def __init__(self, *args, **kwargs):
         self._value = multiprocessing.Value(*args, **kwargs)
         self.stm_lock = multiprocessing.RLock()
