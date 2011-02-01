@@ -17,9 +17,10 @@ class STMObject(base.STMVar):
     remain untouched.
 
     """
-    def __init__(self, size):
+    def __init__(self, value=None, size=constants.DEFAULT_OBJECT_SIZE):
         base.STMVar.__init__(self)
         self._array = multiprocessing.Array("c", size)
+        self._array.raw = pickle.dumps(value, constants.PICKLE_PROTOCOL)
 
     def _set_value(self, value):
         return self._dispatch("_set_value", value)
@@ -32,7 +33,7 @@ class STMObject(base.STMVar):
 class STMObjectInstance(base.STMInstance):
     def __init__(self, txn, stm_object):
         base.STMInstance.__init__(self, txn, stm_object)
-        value = stm_object._array.value
+        value = stm_object._array.raw
         if len(value) == 0:
             self._hash = self._value = None
         else:
@@ -50,9 +51,13 @@ class STMObjectInstance(base.STMInstance):
 
     def _precommit(self):
         self._dumped = pickle.dumps(self._value, constants.PICKLE_PROTOCOL)
-        self.dirty = hashlib.sha256(self._dumped).digest() == self._hash
+        self.dirty = hashlib.sha256(self._dumped).digest() != self._hash
         return base.STMInstance._precommit(self)
 
     def commit(self):
-        self.stm_var._array.value = self._dumped
+        self.stm_var._array.raw = self._dumped
         self._dumped = None
+
+    def _postcommit(self):
+        base.STMInstance._postcommit(self)
+        self.dirty = False

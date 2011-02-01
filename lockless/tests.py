@@ -2,14 +2,15 @@ import random
 import multiprocessing
 import unittest
 
-from lockless import auto_retry, STMValue, atomic, retry, STMObject
+from lockless import auto_retry, STMValue, atomic, retry, STMObject, ConflictError
 
 class BankAccount(object):
     def __init__(self, account_number, initial_balance):
         self.account_number = account_number
-        self.balance = STMValue("i", initial_balance)
+        self.balance = STMObject(initial_balance) #STMValue("i", initial_balance)
 
 @auto_retry()
+#@auto_retry()
 def do_trade(accts, count):
     acct1 = acct2 = random.choice(accts)
     while acct1 == acct2:
@@ -20,10 +21,12 @@ def do_trade(accts, count):
         try:
             amt = random.randint(0, acct1.balance.value-1)
         except ValueError:
-            retry()
+            retry() # raise ConflictError?
 
-        acct1.balance.value -= amt
-        acct2.balance.value += amt
+        # try nesting to make sure it doesn't crash
+        with atomic():
+            acct1.balance.value -= amt
+            acct2.balance.value += amt
 
 def trader(accts, count):
     for _ in range(0, count):
@@ -31,9 +34,9 @@ def trader(accts, count):
 
 class TestBasic(unittest.TestCase):
     def test_main(self):
-        n = 10
-        c = 100
-        a = 10
+        n = 10 # num threads
+        c = 1000 # num xact
+        a = 30 # num accounts
         cash = 100
 
         accts = []

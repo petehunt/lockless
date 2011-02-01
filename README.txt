@@ -19,8 +19,8 @@ Things to keep in mind
     it is idempotent or repeats are okay.
 3. STM is not a silver bullet. If there is a lot of contention transactions will conflict and
     perform badly. If this is the case, switch to pessimistic locking (roll-your-own),
-    preferably using this recipe (which should be included in the stdlib): http://dabeaz.blogspot.com/2009/11/python-thread-deadlock-avoidance_20.html
-4. We don't have orElse functionality from Concurrent Haskell. Retry is also dumb - it does an exponential backoff but does not check if any values have changed. This would require modifications to the core Python language.
+    preferably using this recipe (which should be included in the stdlib): http://dabeaz.blogspot.com/2009/11/python-thread-deadlock-avoidance_20.html and this one: http://code.activestate.com/recipes/413393-multiple-reader-one-writer-mrow-resource-locking/
 
-TODO: orElse functionality
-TODO: better retry() - only retry when data changes
+Outstanding issues:
+
+1. When handling Retry, we poll multiple Events with a very low timeout. This stinks!

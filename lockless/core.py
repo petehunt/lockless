@@ -24,6 +24,10 @@ class Transaction(object):
         self.instances = {}
 
     def commit(self):
+        # if we are nested, don't commit
+        if self._depth > 1:
+            return
+
         instances = sorted(self.instances.values(),
                            key=lambda x: x._get_lock_id())
         acquired = []

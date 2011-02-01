@@ -19,6 +19,8 @@ def atomic():
         core.Transaction.exit()
 
 _retries = 0
+_tries = 0
+_auto_retry_depth = 0
 
 def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
                jitter=constants.DEFAULT_JITTER,
@@ -29,29 +31,41 @@ def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
     """ Decorator to automatically retry transactions with exponential backoff """
     def _d(f):
         def _f(*args, **kwargs):
-            global _retries
-            sleep_time = initial_sleep_time
-            tries = 0
-            _retries = 0
+            global _tries, _retries, _auto_retry_depth
 
-            while True:
-                tries += 1
-                try:
+            # should be called from outside of a transaction
+            try:
+                # check for nesting
+
+                _auto_retry_depth += 1
+
+                if _auto_retry_depth > 1:
                     return f(*args, **kwargs)
-                except err.ConflictError:
-                    # When two transactions conflict, do exponential backoff.
-                    if tries > max_tries:
-                        raise
 
-                    if tries > no_delay_tries:
-                        t = max(0, sleep_time * random.uniform(1.0-jitter, 1.0+jitter))
-                        time.sleep(t)
-                        sleep_time *= backoff_factor
-                except err.RetryTransaction:
-                    # The functionality of RetryTransaction is that the
-                    # constructor will block until one of the values changes.
-                    _retries += 1
-                    pass
+                sleep_time = initial_sleep_time
+                _tries = 0
+                _retries = 0
+
+                while True:
+                    _tries += 1
+                    try:
+                        return f(*args, **kwargs)
+                    except err.ConflictError:
+                        # When two transactions conflict, do exponential backoff.
+
+                        if not max_tries is None and _tries > max_tries:
+                            raise
+
+                        if _tries > no_delay_tries:
+                            t = max(0, sleep_time * random.uniform(1.0-jitter, 1.0+jitter))
+                            time.sleep(t)
+                            sleep_time *= backoff_factor
+                    except err.RetryTransaction:
+                        # The functionality of RetryTransaction is that the
+                        # constructor will block until one of the values changes
+                        _retries += 1
+            finally:
+                _auto_retry_depth -= 1
         return _f
     return _d
 
@@ -76,3 +90,8 @@ def retries():
     """ Returns the number of retries that have occured. Similar to orElse """
     global _retries
     return _retries
+
+def conflicts():
+    """ Returns the number of conflicts that have occurred. Useful for debugging """
+    global _tries
+    return _tries
