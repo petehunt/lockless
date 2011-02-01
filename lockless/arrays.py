@@ -1,39 +1,31 @@
 import multiprocessing
 
-import version_clock
-import err
+import base
 
-class STMArray(object):
+class STMArray(base.STMVar):
     """ I am the transactional equivalent of a multiprocessing.Array. """
     def __init__(self, *args, **kwargs):
+        base.STMVar.__init__(self)
         self._array = multiprocessing.Array(*args, **kwargs)
-        self.stm_lock = multiprocessing.RLock()
-        self.version = multiprocessing.Value(version_clock.VersionClock.TYPECODE, 0)
 
     def __setitem__(self, *args, **kwargs):
-        return core.Transaction.current().get_instance_for(self).__setitem__(*args, **kwargs)
+        return self._dispatch("__setitem__", *args, **kwargs)
 
     def __getitem__(self, *args, **kwargs):
-        return core.Transaction.current().get_instance_for(self).__getitem__(*args, **kwargs)
+        return self._dispatch("__getitem__", *args, **kwargs)
 
     def __setslice__(self, *args, **kwargs):
-        return core.Transaction.current().get_instance_for(self).__setslice__(*args, **kwargs)
+        return self._dispatch("__setslice__", *args, **kwargs)
 
     def __getslice__(self, *args, **kwargs):
-        return core.Transaction.current().get_instance_for(self).__getslice__(*args, **kwargs)
+        return self._dispatch("__getslice__", *args, **kwargs)
 
-class STMArrayInstance(object):
+class STMArrayInstance(base.STMInstance):
     """ only interact with this """
     def __init__(self, txn, stm_array):
-        self.txn = txn
-        self.stm_array = stm_array
+        base.STMInstance.__init__(self, txn, stm_array)
         self.temp_array = stm_array._array.get_obj()._type_ * stm_array._array.get_obj()._length_
         self.temp_array = self.temp_array(*stm_array._array)
-        self.dirty = False
-
-    def _check(self):
-        if self.stm_array.version.value > self.txn.read_version:
-            raise err.ConflictError
 
     def __setitem__(self, *args, **kwargs):
         self.dirty = True
@@ -53,21 +45,5 @@ class STMArrayInstance(object):
         self._check()
         return self.temp_array.__getslice__(*args, **kwargs)
 
-    def _get_lock_id(self):
-        return id(self.stm_array.stm_lock)
-
-    def _precommit(self):
-        if self.dirty:
-            self.stm_array.stm_lock.acquire()
-        self._check()
-
-    def _commit(self):
-        if self.dirty:
-            self.stm_array._array[:] = self.temp_array
-            self.stm_array.version.value = version_clock.VersionClock.read()
-
-    def _postcommit(self):
-        if self.dirty:
-            self.stm_array.stm_lock.release()
-
-import core
+    def commit(self):
+        self.stm_var._array[:] = self.temp_array

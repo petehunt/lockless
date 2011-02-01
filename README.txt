@@ -20,6 +20,7 @@ Things to keep in mind
 3. STM is not a silver bullet. If there is a lot of contention transactions will conflict and
     perform badly. If this is the case, switch to pessimistic locking (roll-your-own),
     preferably using this recipe (which should be included in the stdlib): http://dabeaz.blogspot.com/2009/11/python-thread-deadlock-avoidance_20.html
+4. We don't have orElse functionality from Concurrent Haskell. Retry is also dumb - it does an exponential backoff but does not check if any values have changed. This would require modifications to the core Python language.
 
 TODO: orElse functionality
 TODO: better retry() - only retry when data changes

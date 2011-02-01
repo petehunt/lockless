@@ -1,34 +1,26 @@
 import multiprocessing
 
-import version_clock
-import err
+import base
 
-class STMValue(object):
+class STMValue(base.STMVar):
     """ I am the transactional equivalent of a multiprocessing.Value. """
     def __init__(self, *args, **kwargs):
+        base.STMVar.__init__(self)
         self._value = multiprocessing.Value(*args, **kwargs)
-        self.stm_lock = multiprocessing.RLock()
-        self.version = multiprocessing.Value(version_clock.VersionClock.TYPECODE, 0)
 
     def _get_value(self):
-        return core.Transaction.current().get_instance_for(self).value
+        return self._dispatch("_get_value")
 
     def _set_value(self, value):
-        core.Transaction.current().get_instance_for(self).value = value
+        return self._dispatch("_set_value", value)
 
     value = property(_get_value, _set_value)
 
-class STMValueInstance(object):
+class STMValueInstance(base.STMInstance):
     """ only interact with this """
     def __init__(self, txn, stm_value):
-        self.txn = txn
-        self.stm_value = stm_value
+        base.STMInstance.__init__(self, txn, stm_value)
         self.temp_value = stm_value._value.value
-        self.dirty = False
-
-    def _check(self):
-        if self.stm_value.version.value > self.txn.read_version:
-            raise err.ConflictError
 
     def _get_value(self):
         self._check()
@@ -39,23 +31,5 @@ class STMValueInstance(object):
         self._check()
         self.temp_value = value
 
-    value = property(_get_value, _set_value)
-
-    def _get_lock_id(self):
-        return id(self.stm_value.stm_lock)
-
-    def _precommit(self):
-        if self.dirty:
-            self.stm_value.stm_lock.acquire()
-        self._check()
-
-    def _commit(self):
-        if self.dirty:
-            self.stm_value._value.value = self.temp_value
-            self.stm_value.version.value = version_clock.VersionClock.read()
-
-    def _postcommit(self):
-        if self.dirty:
-            self.stm_value.stm_lock.release()
-    
-import core
+    def commit(self):
+        self.stm_var._value.value = self.temp_value

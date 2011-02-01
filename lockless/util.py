@@ -46,7 +46,7 @@ def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
         return _f
     return _d
 
-def transact(*args, **kwargs):
+def transactional(*args, **kwargs):
     """
     Decorator to mark a function as transactional. You can use this instead of
     with blocks and auto_retry.

@@ -8,8 +8,6 @@ class BankAccount(object):
     def __init__(self, account_number, initial_balance):
         self.account_number = account_number
         self.balance = STMValue("i", initial_balance)
-        with atomic():
-            self.balance.value = initial_balance
 
 @auto_retry()
 def do_trade(accts, count):
