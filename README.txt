@@ -24,3 +24,7 @@ Things to keep in mind
 Outstanding issues:
 
 1. When handling Retry, we poll multiple Events with a very low timeout. This stinks!
+2. Naming conventions
+3. Docs
+4. Refactoring
+5. See if starvation will ever occur and how to fix it
