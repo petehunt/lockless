@@ -34,10 +34,10 @@ class Transaction(object):
             for instance in reversed(acquired):
                 instance._postcommit()
 
-    def get_instance_for(self, x):
-        if x not in self.instances:
-            self.instances[x] = self.INSTANCE_CLASSES[type(x)](self, x)
-        return self.instances[x]
+    def get_instance_for(self, stm_var):
+        if stm_var not in self.instances:
+            self.instances[stm_var] = self.INSTANCE_CLASSES[type(stm_var)](self, stm_var)
+        return self.instances[stm_var]
 
     @classmethod
     def start(cls):
