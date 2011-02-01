@@ -2,6 +2,7 @@ import version_clock
 import err
 import values
 import arrays
+import objects
 import constants
 
 class Transaction(object):
@@ -14,7 +15,7 @@ class Transaction(object):
     INSTANCE_CLASSES = {
         values.STMValue: values.STMValueInstance,
         arrays.STMArray: arrays.STMArrayInstance,
-        arrays.STMPickleArray: arrays.STMArrayInstance,
+        objects.STMObject: objects.STMObjectInstance,
         }
     
     def __init__(self):

@@ -1,8 +1,6 @@
 import multiprocessing
-import cPickle as pickle
 
 import base
-import constants
 
 class STMArray(base.STMVar):
     """ I am the transactional equivalent of a multiprocessing.Array. """
@@ -38,19 +36,6 @@ class STMArray(base.STMVar):
 
     value = property(_get_value, _set_value)
 
-class STMPickleArray(STMArray):
-    def __init__(self, size):
-        STMArray.__init__(self, "c", size)
-
-    def _set_value(self, value):
-        d = pickle.dumps(value, constants.PICKLE_VERSION)
-        return STMArray._set_value(self, d)
-
-    def _get_value(self):
-        return pickle.loads(STMArray._get_value(self))
-
-    value = property(_get_value, _set_value)
-
 class STMArrayInstance(base.STMInstance):
     """ only interact with this """
     def __init__(self, txn, stm_array):
@@ -81,6 +66,7 @@ class STMArrayInstance(base.STMInstance):
         return self.temp_array.value
 
     def _set_value(self, value):
+        self.dirty = True
         self._check()
         self.temp_array.value = value
 
@@ -89,6 +75,7 @@ class STMArrayInstance(base.STMInstance):
         return self.temp_array.raw
 
     def _set_raw(self, raw):
+        self.dirty = True
         self._check()
         self.temp_array.raw = raw
 
