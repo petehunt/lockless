@@ -2,7 +2,7 @@ import random
 import multiprocessing
 import unittest
 
-from lockless import auto_retry, STMValue, atomic, retry, STMObject, ConflictError
+from lockless import auto_retry, STMValue, atomic, retry, STMObject, ConflictError, on_commit, transactional, retries, conflicts
 
 class BankAccount(object):
     def __init__(self, account_number, initial_balance):
@@ -79,6 +79,20 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(a.value, [1,2,3])
             a.value.append(7)
             self.assertEqual(a.value, [1,2,3,7])
+
+    @transactional()
+    def helper(self):
+        on_commit(self.l.append, 1)
+        if conflicts() < 3:
+            raise ConflictError
+
+    def test_on_commit(self):
+        self.l = []
+        self.helper()
+        self.helper()
+        self.helper()
+        self.assertEqual(3, sum(self.l))
+        
 
 if __name__ == "__main__":
     unittest.main()
