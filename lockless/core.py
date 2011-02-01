@@ -1,3 +1,5 @@
+import time
+
 import version_clock
 import err
 import values
@@ -49,8 +51,9 @@ class Transaction(object):
     def wait_for_update(self, timeout=constants.DEFAULT_WAIT_TIMEOUT):
         while True:
             for stm_var in self.instances.keys():
-                if stm_var.wait_for_update(timeout):
+                if stm_var.wait_for_update(0):
                     return
+            time.sleep(timeout)
 
     @classmethod
     def start(cls):
