@@ -10,7 +10,7 @@ import constants
 def atomic():
     """
     Execute a block of code atomically. If the transaction cannot complete,
-    err.RetryTransaction is raised.
+    err.TransactionError is raised.
     """
     try:
         yield core.Transaction.start()
@@ -34,7 +34,8 @@ def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
                 tries += 1
                 try:
                     return f(*args, **kwargs)
-                except err.RetryTransaction:
+                except err.ConflictError:
+                    # When two transactions conflict, do exponential backoff.
                     if tries > max_tries:
                         raise
 
@@ -42,7 +43,10 @@ def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
                         t = max(0, sleep_time * random.uniform(1.0-jitter, 1.0+jitter))
                         time.sleep(t)
                         sleep_time *= backoff_factor
-
+                except err.RetryTransaction:
+                    # The functionality of RetryTransaction is that the
+                    # constructor will block until one of the values changes.
+                    pass
         return _f
     return _d
 

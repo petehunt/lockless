@@ -1,8 +1,17 @@
-class RetryTransaction(Exception):
-    """ The transaction needs to be retried """
+class TransactionError(Exception):
+    pass
 
-class ConflictError(RetryTransaction):
+class RetryTransaction(TransactionError):
+    """ The transaction needs to be retried for some reason.
+    Wait for value to change. """
+    def __init__(self):
+        TransactionError.__init__(self)
+        core.Transaction.current().wait_for_update()
+
+class ConflictError(TransactionError):
     """ There was a conflict between two transactions """
 
-class NoTransactionError(Exception):
+class NoTransactionError(TransactionError):
     """ You did a transactional operation outside of a transaction """
+
+import core

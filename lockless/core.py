@@ -1,7 +1,10 @@
+import multiprocessing
+
 import version_clock
 import err
 import values
 import arrays
+import constants
 
 class Transaction(object):
     """
@@ -38,6 +41,12 @@ class Transaction(object):
         if stm_var not in self.instances:
             self.instances[stm_var] = self.INSTANCE_CLASSES[type(stm_var)](self, stm_var)
         return self.instances[stm_var]
+
+    def wait_for_update(self, timeout=constants.DEFAULT_WAIT_TIMEOUT):
+        while True:
+            for stm_var in self.instances.keys():
+                if stm_var.wait_for_update(timeout):
+                    return
 
     @classmethod
     def start(cls):
