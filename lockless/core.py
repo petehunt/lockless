@@ -1,5 +1,3 @@
-import multiprocessing
-
 import version_clock
 import err
 import values
@@ -16,6 +14,7 @@ class Transaction(object):
     INSTANCE_CLASSES = {
         values.STMValue: values.STMValueInstance,
         arrays.STMArray: arrays.STMArrayInstance,
+        arrays.STMPickleArray: arrays.STMArrayInstance,
         }
     
     def __init__(self):

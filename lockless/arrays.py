@@ -1,6 +1,8 @@
 import multiprocessing
+import cPickle as pickle
 
 import base
+import constants
 
 class STMArray(base.STMVar):
     """ I am the transactional equivalent of a multiprocessing.Array. """
@@ -19,6 +21,35 @@ class STMArray(base.STMVar):
 
     def __getslice__(self, *args, **kwargs):
         return self._dispatch("__getslice__", *args, **kwargs)
+
+    def _get_raw(self):
+        return self._dispatch("_get_raw")
+
+    def _set_raw(self, raw):
+        return self._dispatch("_set_raw", raw)
+
+    raw = property(_get_raw, _set_raw)
+
+    def _get_value(self):
+        return self._dispatch("_get_value")
+
+    def _set_value(self, value):
+        return self._dispatch("_set_value", value)
+
+    value = property(_get_value, _set_value)
+
+class STMPickleArray(STMArray):
+    def __init__(self, size):
+        STMArray.__init__(self, "c", size)
+
+    def _set_value(self, value):
+        d = pickle.dumps(value, constants.PICKLE_VERSION)
+        return STMArray._set_value(self, d)
+
+    def _get_value(self):
+        return pickle.loads(STMArray._get_value(self))
+
+    value = property(_get_value, _set_value)
 
 class STMArrayInstance(base.STMInstance):
     """ only interact with this """
@@ -44,6 +75,22 @@ class STMArrayInstance(base.STMInstance):
     def __getslice__(self, *args, **kwargs):
         self._check()
         return self.temp_array.__getslice__(*args, **kwargs)
+
+    def _get_value(self):
+        self._check()
+        return self.temp_array.value
+
+    def _set_value(self, value):
+        self._check()
+        self.temp_array.value = value
+
+    def _get_raw(self):
+        self._check()
+        return self.temp_array.raw
+
+    def _set_raw(self, raw):
+        self._check()
+        self.temp_array.raw = raw
 
     def commit(self):
         self.stm_var._array[:] = self.temp_array

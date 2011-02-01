@@ -2,7 +2,7 @@ import random
 import multiprocessing
 import unittest
 
-from lockless import auto_retry, STMValue, atomic, retry
+from lockless import auto_retry, STMValue, atomic, retry, STMPickleArray
 
 class BankAccount(object):
     def __init__(self, account_number, initial_balance):
@@ -64,6 +64,12 @@ class TestBasic(unittest.TestCase):
 
         self.assertTrue(nonhundo)
         self.assertEqual(0, total_cash)
+
+    def test_pickle(self):
+        a = STMPickleArray(128)
+        with atomic():
+            a.value = "pete"
+            self.assertEqual(a.value, "pete")
 
 if __name__ == "__main__":
     unittest.main()

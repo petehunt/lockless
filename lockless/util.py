@@ -18,6 +18,8 @@ def atomic():
     finally:
         core.Transaction.exit()
 
+_retries = 0
+
 def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
                jitter=constants.DEFAULT_JITTER,
                backoff_factor=constants.DEFAULT_BACKOFF_FACTOR,
@@ -27,8 +29,10 @@ def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
     """ Decorator to automatically retry transactions with exponential backoff """
     def _d(f):
         def _f(*args, **kwargs):
+            global _retries
             sleep_time = initial_sleep_time
             tries = 0
+            _retries = 0
 
             while True:
                 tries += 1
@@ -46,6 +50,7 @@ def auto_retry(initial_sleep_time=constants.DEFAULT_INITIAL_SLEEP_TIME,
                 except err.RetryTransaction:
                     # The functionality of RetryTransaction is that the
                     # constructor will block until one of the values changes.
+                    _retries += 1
                     pass
         return _f
     return _d
@@ -66,3 +71,8 @@ def transactional(*args, **kwargs):
 def retry():
     """ Force the transaction to abort """
     raise err.RetryTransaction()
+
+def retries():
+    """ Returns the number of retries that have occured. Similar to orElse """
+    global _retries
+    return _retries
