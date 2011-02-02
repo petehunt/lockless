@@ -28,3 +28,5 @@ Outstanding issues:
 3. Docs
 4. Refactoring
 5. See if starvation will ever occur and how to fix it
+6. Microthreads
+7. MROW and deadlock avoidance library

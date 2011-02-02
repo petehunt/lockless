@@ -92,6 +92,18 @@ class TestBasic(unittest.TestCase):
         self.helper()
         self.helper()
         self.assertEqual(3, sum(self.l))
+
+    def test_exception(self):
+        x = STMValue("i",0)
+        try:
+            with atomic():
+                x.value += 1
+                raise ValueError
+            self.fail()
+        except ValueError:
+            pass
+        with atomic():
+            self.assertEqual(x.value, 0)
         
 
 if __name__ == "__main__":
