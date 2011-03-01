@@ -83,6 +83,7 @@ class TestBasic(unittest.TestCase):
     @transactional()
     def helper(self):
         on_commit(self.l.append, 1)
+
         if conflicts() < 3:
             raise ConflictError
 
