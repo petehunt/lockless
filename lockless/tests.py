@@ -2,7 +2,7 @@ import random
 import multiprocessing
 import unittest
 
-from lockless import auto_retry, STMValue, atomic, retry, STMObject, ConflictError, on_commit, transactional, retries, conflicts
+from . import auto_retry, STMValue, atomic, retry, STMObject, ConflictError, on_commit, transactional, retries, conflicts
 
 class BankAccount(object):
     def __init__(self, account_number, initial_balance):

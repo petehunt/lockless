@@ -1,11 +1,11 @@
 import multiprocessing
 
-import base
+from . import base
 
-class STMArray(base.STMVar):
+class STMArray(base.STMRef):
     """ I am the transactional equivalent of a multiprocessing.Array. """
     def __init__(self, *args, **kwargs):
-        base.STMVar.__init__(self)
+        base.STMRef.__init__(self)
         self._array = multiprocessing.Array(*args, **kwargs)
 
     def __setitem__(self, *args, **kwargs):
@@ -36,10 +36,10 @@ class STMArray(base.STMVar):
 
     value = property(_get_value, _set_value)
 
-class STMArrayInstance(base.STMInstance):
+class STMArrayView(base.STMView):
     """ only interact with this """
     def __init__(self, txn, stm_array):
-        base.STMInstance.__init__(self, txn, stm_array)
+        base.STMView.__init__(self, txn, stm_array)
         self.temp_array = stm_array._array.get_obj()._type_ * stm_array._array.get_obj()._length_
         self.temp_array = self.temp_array(*stm_array._array)
 
@@ -80,4 +80,4 @@ class STMArrayInstance(base.STMInstance):
         self.temp_array.raw = raw
 
     def commit(self):
-        self.stm_var._array[:] = self.temp_array
+        self.stm_ref._array[:] = self.temp_array

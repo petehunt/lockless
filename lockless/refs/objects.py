@@ -2,10 +2,10 @@ import multiprocessing
 import cPickle as pickle
 import hashlib
 
-import base
-import constants
+from . import base
+from .. import constants
 
-class STMObject(base.STMVar):
+class STMObject(base.STMRef):
     """
     I let you share objects between processes.
 
@@ -18,7 +18,7 @@ class STMObject(base.STMVar):
 
     """
     def __init__(self, value=None, size=constants.DEFAULT_OBJECT_SIZE):
-        base.STMVar.__init__(self)
+        base.STMRef.__init__(self)
         self._array = multiprocessing.Array("c", size)
         self._array.raw = pickle.dumps(value, constants.PICKLE_PROTOCOL)
 
@@ -30,9 +30,9 @@ class STMObject(base.STMVar):
 
     value = property(_get_value, _set_value)
 
-class STMObjectInstance(base.STMInstance):
+class STMObjectView(base.STMView):
     def __init__(self, txn, stm_object):
-        base.STMInstance.__init__(self, txn, stm_object)
+        base.STMView.__init__(self, txn, stm_object)
         value = stm_object._array.raw
         if len(value) == 0:
             self._hash = self._value = None
@@ -52,12 +52,12 @@ class STMObjectInstance(base.STMInstance):
     def _precommit(self):
         self._dumped = pickle.dumps(self._value, constants.PICKLE_PROTOCOL)
         self.dirty = hashlib.sha256(self._dumped).digest() != self._hash
-        return base.STMInstance._precommit(self)
+        return base.STMView._precommit(self)
 
     def commit(self):
-        self.stm_var._array.raw = self._dumped
+        self.stm_ref._array.raw = self._dumped
         self._dumped = None
 
     def _postcommit(self):
-        base.STMInstance._postcommit(self)
+        base.STMView._postcommit(self)
         self.dirty = False

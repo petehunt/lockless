@@ -2,9 +2,9 @@ import contextlib
 import time
 import random
 
-import core
-import err
-import constants
+from . import core
+from . import err
+from . import constants
 
 @contextlib.contextmanager
 def atomic():

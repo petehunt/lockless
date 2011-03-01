@@ -1,6 +1,6 @@
 # Support for side effects
 
-import core
+from . import core
 
 class Action(object):
     def __init__(self, f, args, kwargs):
@@ -29,4 +29,4 @@ def on_commit(f, *args, **kwargs):
     Run an action on commit. Use me for e.g. logging.
     """
     se = Action(f, args, kwargs)
-    core.Transaction.current().instances[se] = se
+    core.Transaction.current().views[se] = se
